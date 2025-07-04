@@ -51,7 +51,7 @@ This project is a web-based application that allows users to upload an image and
 1.  **Open your terminal or Git Bash.**
 2.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/](https://github.com/)[YOUR_GITHUB_USERNAME]/AI-Image-Classifier.git
+    git clone [https://github.com/](https://github.com/)AtharvaMeherkar/AI-Image-Classifier.git
     ```
 3.  **Navigate into the project directory:**
     ```bash
