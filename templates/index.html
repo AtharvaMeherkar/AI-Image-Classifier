@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Image Classifier</title>
+    <!-- Google Fonts: Inter for clean text, Poppins for headings -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Font Awesome for icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <style>
+      /* General Styling & Variables */
+      :root {
+        --primary-color: #4a90e2; /* Blue */
+        --secondary-color: #50e3c2; /* Teal */
+        --accent-color: #a663cc; /* Purple */
+        --dark-text: #2c3e50; /* Dark Blue Gray */
+        --light-text: #f4f4f4;
+        --light-bg: #f0f2f5;
+        --card-bg: #ffffff;
+        --border-radius-lg: 16px;
+        --shadow-md: 0 8px 16px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.15);
+      }
+
+      /* CSS Reset */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        line-height: 1.7;
+        color: var(--dark-text);
+        background: linear-gradient(
+          135deg,
+          #e0eafc,
+          #cfdef3
+        ); /* Subtle gradient background */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+        overflow-x: hidden;
+      }
+
+      .container {
+        background-color: var(--card-bg);
+        padding: 40px;
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-lg);
+        text-align: center;
+        width: 100%;
+        max-width: 800px; /* Wider container */
+        border: 1px solid #e0e0e0;
+        position: relative;
+        overflow: hidden; /* For blob effect */
+      }
+
+      /* Decorative blobs */
+      .blob {
+        position: absolute;
+        background-color: var(--primary-color);
+        border-radius: 50%;
+        opacity: 0.1;
+        filter: blur(50px);
+        animation: blob-animation 10s infinite ease-in-out;
+        z-index: 0;
+      }
+      .blob:nth-child(1) {
+        top: -20px;
+        left: -20px;
+        width: 100px;
+        height: 100px;
+        animation-delay: 0s;
+      }
+      .blob:nth-child(2) {
+        bottom: -30px;
+        right: -30px;
+        width: 120px;
+        height: 120px;
+        animation-delay: 2s;
+        background-color: var(--secondary-color);
+      }
+      .blob:nth-child(3) {
+        top: 50%;
+        left: 30%;
+        width: 80px;
+        height: 80px;
+        animation-delay: 4s;
+        background-color: var(--accent-color);
+      }
+
+      @keyframes blob-animation {
+        0%,
+        100% {
+          transform: translate(0, 0) scale(1);
+        }
+        25% {
+          transform: translate(20px, -30px) scale(1.1);
+        }
+        50% {
+          transform: translate(-10px, 40px) scale(0.9);
+        }
+        75% {
+          transform: translate(30px, 10px) scale(1.2);
+        }
+      }
+
+      h1 {
+        font-family: "Poppins", sans-serif;
+        color: var(--dark-text);
+        margin-bottom: 30px;
+        font-size: 2.8em;
+        font-weight: 800;
+        position: relative;
+        z-index: 1;
+      }
+
+      .upload-area {
+        border: 3px dashed #a0c4ff;
+        border-radius: 12px;
+        padding: 40px;
+        margin-bottom: 20px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, border-color 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        min-height: 200px; /* Minimum height for better click area */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+      }
+      .upload-area:hover {
+        background-color: #e6f2ff;
+        border-color: var(--primary-color);
+      }
+      .upload-area input[type="file"] {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+      }
+      .upload-area p {
+        margin: 0;
+        color: #616161;
+        font-size: 1.2em;
+        font-weight: 500;
+      }
+      .upload-area p strong {
+        color: var(--primary-color);
+      }
+      #previewImage {
+        max-width: 100%;
+        max-height: 300px; /* Larger preview */
+        border-radius: 8px;
+        margin-top: 20px;
+        display: none;
+        box-shadow: var(--shadow-md);
+        object-fit: contain; /* Ensure image fits without cropping */
+      }
+      button {
+        background: linear-gradient(
+          135deg,
+          #4caf50,
+          #2e8b57
+        ); /* Green gradient */
+        color: white;
+        padding: 14px 30px;
+        border: none;
+        border-radius: 50px; /* Pill shape */
+        font-size: 1.1em;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        margin-top: 20px;
+        box-shadow: var(--shadow-sm);
+        position: relative;
+        z-index: 1;
+      }
+      button:hover {
+        background: linear-gradient(135deg, #45a049, #256b46);
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+      }
+      button:disabled {
+        background: #cccccc;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .message-box {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: none;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+      }
+      .loading-message {
+        background-color: #e6f2ff;
+        color: var(--primary-color);
+      }
+      .error-message {
+        background-color: #ffe6e6;
+        color: #dc3545;
+      }
+
+      .result-box {
+        margin-top: 30px;
+        padding: 25px;
+        border-radius: 12px;
+        background-color: #f9f9f9;
+        border: 1px solid #e0e0e0;
+        text-align: left;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+        min-height: 100px;
+        display: none;
+        position: relative;
+        z-index: 1;
+      }
+      .result-box h3 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: var(--dark-text);
+        font-size: 1.6em;
+        font-weight: 700;
+      }
+      .prediction-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+        font-size: 1.1em;
+        animation: fadeIn 0.5s ease-out forwards;
+      }
+      .prediction-item:last-child {
+        border-bottom: none;
+      }
+      .prediction-item .label {
+        font-weight: 600;
+        color: var(--primary-color);
+        flex-grow: 1;
+      }
+      .prediction-item .score-bar-container {
+        width: 150px; /* Fixed width for score bar */
+        height: 10px;
+        background-color: #e0e0e0;
+        border-radius: 5px;
+        overflow: hidden;
+        margin-left: 15px;
+        margin-right: 10px;
+      }
+      .prediction-item .score-bar {
+        height: 100%;
+        background-color: var(--secondary-color);
+        border-radius: 5px;
+        transition: width 1s ease-out; /* Animate score bar fill */
+      }
+      .prediction-item .score-text {
+        color: #616161;
+        font-weight: 500;
+        width: 50px; /* Fixed width for percentage text */
+        text-align: right;
+      }
+
+      /* Animations */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .container {
+          padding: 25px;
+          max-width: 95%;
+        }
+        h1 {
+          font-size: 2.2em;
+          margin-bottom: 20px;
+        }
+        .upload-area {
+          padding: 25px;
+        }
+        .upload-area p {
+          font-size: 1em;
+        }
+        button {
+          padding: 10px 20px;
+          font-size: 1em;
+        }
+        .result-box {
+          padding: 20px;
+        }
+        .result-box h3 {
+          font-size: 1.3em;
+        }
+        .prediction-item {
+          font-size: 0.95em;
+          flex-wrap: wrap; /* Allow wrapping on small screens */
+          justify-content: space-between;
+        }
+        .prediction-item .label {
+          width: 100%; /* Full width for label */
+          margin-bottom: 5px;
+        }
+        .prediction-item .score-bar-container {
+          width: calc(100% - 60px); /* Adjust width for score bar */
+          margin-left: 0;
+          margin-right: 10px;
+        }
+        .prediction-item .score-text {
+          width: 50px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .container {
+          padding: 15px;
+        }
+        h1 {
+          font-size: 1.8em;
+        }
+        .upload-area p {
+          font-size: 0.9em;
+        }
+        button {
+          font-size: 0.9em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Decorative blobs -->
+      <div class="blob"></div>
+      <div class="blob"></div>
+      <div class="blob"></div>
+
+      <h1 class="main-title">AI Image Classifier</h1>
+      <div class="upload-area" id="uploadArea">
+        <input type="file" id="imageUpload" accept="image/*" />
+        <p>
+          <i class="fas fa-cloud-upload-alt"></i> Drag & Drop your image here,
+          or <strong>Click to Upload</strong>
+        </p>
+        <img id="previewImage" src="#" alt="Image Preview" />
+      </div>
+      <button id="predictButton" disabled>Predict Image</button>
+
+      <p id="loadingMessage" class="message-box loading-message">
+        <i class="fas fa-spinner fa-spin"></i> Analyzing image...
+      </p>
+      <p id="errorMessage" class="message-box error-message">
+        <i class="fas fa-exclamation-circle"></i> An error occurred.
+      </p>
+
+      <div class="result-box" id="resultBox">
+        <h3>Top Predictions:</h3>
+        <div id="predictionsList">
+          <!-- Predictions will be inserted here -->
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const imageUpload = document.getElementById("imageUpload");
+      const uploadArea = document.getElementById("uploadArea");
+      const previewImage = document.getElementById("previewImage");
+      const predictButton = document.getElementById("predictButton");
+      const loadingMessage = document.getElementById("loadingMessage");
+      const errorMessage = document.getElementById("errorMessage");
+      const resultBox = document.getElementById("resultBox");
+      const predictionsList = document.getElementById("predictionsList");
+
+      let selectedFile = null;
+
+      // Helper to show/hide messages
+      function showMessage(element, text = "", type = "") {
+        loadingMessage.style.display = "none";
+        errorMessage.style.display = "none";
+
+        if (type === "loading") {
+          element.textContent = text;
+          element.style.display = "block";
+        } else if (type === "error") {
+          element.textContent = text;
+          element.style.display = "block";
+        } else {
+          element.style.display = "none";
+        }
+      }
+
+      // Handle file selection
+      imageUpload.addEventListener("change", (event) => {
+        selectedFile = event.target.files[0];
+        if (selectedFile) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            previewImage.src = e.target.result;
+            previewImage.style.display = "block";
+            predictButton.disabled = false;
+            resultBox.style.display = "none"; // Hide previous results
+            showMessage(errorMessage); // Clear error message
+            showMessage(loadingMessage); // Clear loading message
+          };
+          reader.readAsDataURL(selectedFile);
+        } else {
+          previewImage.style.display = "none";
+          predictButton.disabled = true;
+        }
+      });
+
+      // Handle drag and drop
+      uploadArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = "#4A90E2";
+        uploadArea.style.backgroundColor = "#e6f2ff";
+      });
+
+      uploadArea.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = "#a0c4ff";
+        uploadArea.style.backgroundColor =
+          "transparent"; /* Reset to transparent */
+      });
+
+      uploadArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = "#a0c4ff";
+        uploadArea.style.backgroundColor =
+          "transparent"; /* Reset to transparent */
+        selectedFile = e.dataTransfer.files[0];
+        if (selectedFile && selectedFile.type.startsWith("image/")) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            previewImage.src = event.target.result;
+            previewImage.style.display = "block";
+            predictButton.disabled = false;
+            resultBox.style.display = "none";
+            showMessage(errorMessage);
+            showMessage(loadingMessage);
+          };
+          reader.readAsDataURL(selectedFile);
+        } else {
+          showMessage(errorMessage, "Please drop an image file.", "error");
+          predictButton.disabled = true;
+        }
+      });
+
+      // Handle prediction button click
+      predictButton.addEventListener("click", async () => {
+        if (!selectedFile) {
+          showMessage(errorMessage, "Please select an image first.", "error");
+          return;
+        }
+
+        showMessage(loadingMessage, "Analyzing image...", "loading");
+        resultBox.style.display = "none";
+        predictButton.disabled = true;
+
+        const formData = new FormData();
+        formData.append("image", selectedFile); // 'image' must match Flask's request.files['image']
+
+        try {
+          const response = await fetch("/predict", {
+            method: "POST",
+            body: formData, // No Content-Type header needed for FormData
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            predictionsList.innerHTML = ""; // Clear previous predictions
+            if (data.predictions && data.predictions.length > 0) {
+              data.predictions.forEach((prediction) => {
+                const item = document.createElement("div");
+                item.classList.add("prediction-item");
+                item.innerHTML = `
+                                <span class="label">${prediction.label}</span>
+                                <div class="score-bar-container">
+                                    <div class="score-bar" style="width: ${prediction.score}%;"></div>
+                                </div>
+                                <span class="score-text">${prediction.score}%</span>
+                            `;
+                predictionsList.appendChild(item);
+              });
+              resultBox.style.display = "block";
+            } else {
+              showMessage(
+                errorMessage,
+                "No predictions found for this image.",
+                "error"
+              );
+            }
+          } else {
+            showMessage(
+              errorMessage,
+              data.error || "An unknown error occurred during prediction.",
+              "error"
+            );
+          }
+        } catch (error) {
+          console.error("Fetch error:", error);
+          showMessage(
+            errorMessage,
+            "Could not connect to the server. Please ensure the backend is running.",
+            "error"
+          );
+        } finally {
+          showMessage(loadingMessage); // Hide loading
+          predictButton.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

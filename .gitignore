@@ -1,0 +1,24 @@
+# Python
+_pycache_/
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.vscode/
+
+# Specific to this project
+# Model files (can be large, often regenerated)
+*.pt # PyTorch model files
+*.pth
+*.bin
+*.h5
+*.keras
+*.pkl # Scikit-learn models/pickles
+imagenet_classes.txt # Can be ignored if downloaded on runtime, or included if small
+
+# Log files/output
+*.log
